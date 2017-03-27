@@ -147,9 +147,9 @@ func logContainers(client *docker.Client, conts []docker.APIContainers) {
 			err := client.Logs(docker.LogsOptions{
 				Container:    cont.ID,
 				Stdout:       true,
-				OutputStream: LineWriter(wOut, tag),
+				OutputStream: LineWriter(wOut, tag, nil),
 				Stderr:       true,
-				ErrorStream:  LineWriter(wErr, tag),
+				ErrorStream:  LineWriter(wErr, tag, color.New(color.FgHiRed)),
 				Follow:       flags.follow,
 				Tail:         flags.tail,
 			})
@@ -203,14 +203,19 @@ func tagConfig(tags []string, postFix string) func(string) []byte {
 	}
 }
 
-func LineWriter(w io.Writer, tag []byte) io.Writer {
+func LineWriter(w io.Writer, tag []byte, color *color.Color) io.Writer {
 	r, in := io.Pipe()
 
 	go func() {
 		scan := bufio.NewScanner(r)
-		// scan.Split(scanLinesKeepCR)
 		for scan.Scan() {
-			if _, err := fullWrite(w, append(tag, append(scan.Bytes(), []byte("\n")...)...)); err != nil {
+			var logLine []byte
+			if color != nil {
+				logLine = []byte(color.Sprint(scan.Bytes()))
+			} else {
+				logLine = scan.Bytes()
+			}
+			if _, err := fullWrite(w, append(tag, append(logLine, []byte("\n")...)...)); err != nil {
 				fmt.Printf("Error attempting to write to dest: %s\n", err)
 				break
 			}
