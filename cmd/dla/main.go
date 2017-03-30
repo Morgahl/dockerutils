@@ -211,7 +211,7 @@ func LineWriter(w io.Writer, tag []byte, color *color.Color) io.Writer {
 		for scan.Scan() {
 			var logLine []byte
 			if color != nil {
-				logLine = []byte(color.Sprint(scan.Bytes()))
+				logLine = []byte(color.Sprint(scan.Text()))
 			} else {
 				logLine = scan.Bytes()
 			}
